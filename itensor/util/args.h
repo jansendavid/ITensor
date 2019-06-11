@@ -107,6 +107,8 @@ class Args
     void     
     add(Name const& name, std::string const& sval);
     void     
+    add(Name const& name, std::vector<int> const& vecintval);
+    void     
     add(Name const& name, Real rval);
     void
     add(const char* ostring);
@@ -136,6 +138,13 @@ class Args
     // Get value of string-type argument, returns default_val if not defined
     const std::string&
     getString(Name const& name, std::string const& default_val) const;
+    
+    // Get value of std::vector<int> argument, throws if not defined
+    const std::vector<int>&
+    getVecInt(Name const& name) const;
+    // Get value of string-type argument, returns default_val if not defined
+    const std::vector<int>&
+    getVecInt(Name const& name, std::vector<int> const& default_val) const;
 
     // Get value of int-type argument, throws if not defined
     long
@@ -227,11 +236,12 @@ class Args
     class Val
         {
         public:
-        enum Type { Boolean, Numeric, String, None };
+	  enum Type { Boolean, Numeric, String, VecInt, None };
         private:
         Name name_;
         Type type_;
         std::string sval_;
+	std::vector<int> vecintval_;
         Real rval_;
         public:
 
@@ -246,6 +256,9 @@ class Args
                       
         Val(Name const& name, const char* sval);
         Val(Name const& name, std::string const& sval);
+
+	Val(Name const& name, const std::vector<int>& vecintval);
+
                       
         Val(Name const& name, long ival);
         Val(Name const& name, int ival);
@@ -266,6 +279,9 @@ class Args
 
         std::string const&
         stringVal() const { assertType(String); return sval_; }
+
+	std::vector<int> const&
+        vecIntVal() const { assertType(VecInt); return vecintval_; }
 
         long
         intVal() const { assertType(Numeric); return long(rval_); }

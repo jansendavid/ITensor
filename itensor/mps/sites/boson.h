@@ -36,15 +36,23 @@ class BosonSite
         auto conserveQNs = args.getBool("ConserveQNs",true);
         auto conserveNb = args.getBool("ConserveNb",conserveQNs);
 
-        auto tags = TagSet("Site,Boson");
+	auto tags = TagSet("Site,Boson");
         auto n = 1;
         if(args.defined("SiteNumber") )
             {
             n = args.getInt("SiteNumber");
             tags.addTags("n="+str(n));
             }
-
-        auto maxOcc = args.getInt("MaxOcc",1);
+	auto diffMaxOcc = args.getBool("DiffMaxOcc",false);
+	auto maxOcc{0};
+	if(diffMaxOcc)
+	  {
+	    auto occVec=args.getVecInt("MaxOccVec");
+	    maxOcc= occVec[n-1];
+	  }
+	else{
+        maxOcc = args.getInt("MaxOcc",1);
+	}
         if(conserveQNs)
             {
             if(conserveNb)

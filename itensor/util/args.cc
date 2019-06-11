@@ -97,6 +97,15 @@ Val(Name const& name, const string& sval)
     { }
 
 Args::Val::
+Val(Name const& name, const std::vector<int>& vecintval)
+    :
+    name_(chopSpaceEq(name)),
+    type_(VecInt),
+    vecintval_(vecintval),
+    rval_(NAN)
+    { }
+
+Args::Val::
 Val(Name const& name, long ival)
     :
     name_(chopSpaceEq(name)),
@@ -136,7 +145,7 @@ Val(Name const& name, Real rval)
     type_(Numeric),
     rval_(rval)
     { }
-
+  // still need to overload these
 void Args::Val::
 read(std::istream& s)
     { 
@@ -250,6 +259,8 @@ add(Name const& name, const char* sval) { add({name,std::string(sval)}); }
 void Args::
 add(Name const& name, const std::string& sval) { add({name,sval}); }
 void Args::
+add(Name const& name, const std::vector<int>& vecintval) { add({name,vecintval}); }
+void Args::
 add(Name const& name, Real rval) { add({name,rval}); }
 
 bool Args::
@@ -340,6 +351,18 @@ string const& Args::
 getString(Name const& name, string const& default_value) const
     {
     if(defined(name)) return get(name).stringVal();
+    return default_value;
+    }
+  std::vector<int> const& Args::
+getVecInt(Name const& name) const
+    {
+    return get(name).vecIntVal();
+    }
+  
+  std::vector<int> const& Args::
+  getVecInt(Name const& name, std::vector<int> const& default_value) const
+    {
+    if(defined(name)) return get(name).vecIntVal();
     return default_value;
     }
 

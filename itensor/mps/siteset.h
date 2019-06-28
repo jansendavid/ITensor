@@ -500,6 +500,19 @@ class BasicSiteSet : public SiteSet
             sites.set(j,SiteType(is(j)));
         SiteSet::init(std::move(sites));
         }
+      BasicSiteSet(BasicSiteSet& siteset, size_t site, std::vector<int> v, Args const& args = Args::global())
+      {
+	int N=siteset.N();
+	auto sites=SiteStore(N);
+	for(int j=1; j<=N; ++j)
+	  {
+	    sites.set(j, SiteType(siteset(j)));
+	  }
+	sites.set(site, SiteType({args,"SiteNumber=",site,"ConserveNf=",true,
+                             "ConserveNb=",false,
+      "DiffMaxOcc=",true, "MaxOccVec=", v}));
+	SiteSet::init(std::move(sites));
+      }
 
     void
     read(std::istream& s)

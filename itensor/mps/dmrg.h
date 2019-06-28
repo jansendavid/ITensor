@@ -400,7 +400,9 @@ DMRGWorker(MPS & psi,
 
             energy = davidson(PH,phi,args);
             
+            TIMER_START(40);
             auto spec = psi.svdBond(b,phi,(ha==1?Fromleft:Fromright),PH,args);
+            TIMER_STOP(40);
 
             if(!quiet)
                 { 
@@ -429,6 +431,10 @@ DMRGWorker(MPS & psi,
             auto sm = sw_time.sincemark();
             printfln("    Sweep %d/%d CPU time = %s (Wall time = %s)",
                       sw,sweeps.nsweep(),showtime(sm.time),showtime(sm.wall));
+#ifdef COLLECT_TIMES
+            println(timers());
+            timers().reset();
+#endif
             }
 
         if(obs.checkDone(args)) break;

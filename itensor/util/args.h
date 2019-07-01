@@ -107,7 +107,7 @@ class Args
     void     
     add(Name const& name, std::string const& sval);
     void     
-    add(Name const& name, std::vector<int> const& vecintval);
+    add(Name const& name,  const std::vector<int>&  vecintval);
     void     
     add(Name const& name, Real rval);
     void

@@ -22,70 +22,72 @@
 #include "tbb/tbb.h"
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
+#include "tbb/concurrent_vector.h"
 #endif
 
 #include "itensor/indexset.h"
 
 namespace itensor {
-  template<typename T1, typename T2, typename T3, typename T4, 
-	   typename T6, typename T7, typename T8, typename T9, typename T10,  typename T11, typename T12>
-  void para_func(T1& B, T2& A, T3& AtoC, T4& AtoB, T6& rA, T7& Cblockind, T8& rB, T9& BtoC, T10& Cis, T11& blockContractions, T12& Cblocksizes, int i){
-#ifdef ITENSOR_USE_OMP
-    int thread_num = omp_get_thread_num();
-#endif
+//   template<typename BlockSparseB, typename BlockSparseA, typename T3, typename T4, 
+// 	   typename T6, typename T7, typename 8, typename T9, typename T11, typename T12>
+//   void para_func(BlockSparseB& B, BlockSparseA& A, T3& AtoC, T4& AtoB, T& rA, T7& Cblockind, T& rB, T9& BtoC, IndexSet& Cis,
+// 		 T11& blockContractions, T12& Cblocksizes, int i){
+// #ifdef ITENSOR_USE_OMP
+//     int thread_num = omp_get_thread_num();
+// #endif
 
  
-        auto const& aio = A.offsets[i];
+//         auto const& aio = A.offsets[i];
 
-        //Begin computing elements of Cblock(=destination of this block-block contraction)
-        for(auto iA : range(rA))
-            if(AtoC[iA] != -1) Cblockind[AtoC[iA]] = aio.block[iA];
+//         //Begin computing elements of Cblock(=destination of this block-block contraction)
+//         for(auto iA : range(rA))
+//             if(AtoC[iA] != -1) Cblockind[AtoC[iA]] = aio.block[iA];
 
-        //Loop over blocks of B which contract with current block of A
-        for(auto const& bio : B.offsets)
-            {
-            auto do_blocks_contract = true;
-            for(auto iA : range(rA))
-                {
-                auto iB = AtoB[iA];
-                if(AtoB[iA] != -1)
-                    if(aio.block[iA] != bio.block[iB])
-                        {
-                        do_blocks_contract = false;
-                        break;
-                        }
-                }
-            if(!do_blocks_contract) continue;
+//         //Loop over blocks of B which contract with current block of A
+//         for(auto const& bio : B.offsets)
+//             {
+//             auto do_blocks_contract = true;
+//             for(auto iA : range(rA))
+//                 {
+//                 auto iB = AtoB[iA];
+//                 if(AtoB[iA] != -1)
+//                     if(aio.block[iA] != bio.block[iB])
+//                         {
+//                         do_blocks_contract = false;
+//                         break;
+//                         }
+//                 }
+//             if(!do_blocks_contract) continue;
 
-            //Finish making Cblockind
-            for(auto iB : range(rB))
-                if(BtoC[iB] != -1) Cblockind[BtoC[iB]] = bio.block[iB];
+//             //Finish making Cblockind
+//             for(auto iB : range(rB))
+//                 if(BtoC[iB] != -1) Cblockind[BtoC[iB]] = bio.block[iB];
 
-            // Store the current contraction
-#ifdef ITENSOR_USE_OMP
-            blockContractions[thread_num].push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-#elif ITENSOR_USE_TBB
-	     blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-#else
-            blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-#endif
+//             // Store the current contraction
+// #ifdef ITENSOR_USE_OMP
+//             blockContractions[thread_num].push_back(std::make_tuple(aio.block,bio.block,Cblockind));
+// #elif ITENSOR_USE_TBB
+// 	     blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
+// #else
+//             blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
+// #endif
 
-            long blockDim = 1;   //accumulate dim of Indices
-            for(auto j : range(order(Cis)))
-                {
-                auto& J = Cis[j];
-                auto i_j = Cblockind[j];
-                blockDim *= J.blocksize0(i_j);
-                }
-#ifdef ITENSOR_USE_OMP
-            Cblocksizes[thread_num].push_back(make_blof(Cblockind,blockDim));
-#elif ITENSOR_USE_TBB
-	    Cblocksizes.push_back(make_blof(Cblockind,blockDim));
-#else
-            Cblocksizes.push_back(make_blof(Cblockind,blockDim));
-#endif
-            } //for B.offsets
-        }
+//             long blockDim = 1;   //accumulate dim of Indices
+//             for(auto j : range(order(Cis)))
+//                 {
+//                 auto& J = Cis[j];
+//                 auto i_j = Cblockind[j];
+//                 blockDim *= J.blocksize0(i_j);
+//                 }
+// #ifdef ITENSOR_USE_OMP
+//             Cblocksizes[thread_num].push_back(make_blof(Cblockind,blockDim));
+// #elif ITENSOR_USE_TBB
+// 	    Cblocksizes.push_back(make_blof(Cblockind,blockDim));
+// #else
+//             Cblocksizes.push_back(make_blof(Cblockind,blockDim));
+// #endif
+//             } //for B.offsets
+//         }
   //for A.offsets
   
 //
@@ -163,6 +165,7 @@ getContractedOffsets(BlockSparseA const& A,
                      IndexSet const& Bis,
                      IndexSet const& Cis)
     {
+      //          std::cout<< "TBB is running "<< std::endl;
     auto rA = order(Ais);
     auto rB = order(Bis);
     auto rC = order(Cis);
@@ -212,82 +215,84 @@ getContractedOffsets(BlockSparseA const& A,
     auto Cblockind = Block(rC,0);
 
 #ifdef ITENSOR_USE_OMP
-    //  int thread_num = omp_get_thread_num();
+      int thread_num = omp_get_thread_num();
 #endif
- #ifdef ITENSOR_USE_OMP
-    #pragma omp for schedule(dynamic)
-       for (int i=0; i<(int)A.offsets.size(); ++i)
+ // #ifdef ITENSOR_USE_OMP
+ //    #pragma omp for schedule(dynamic)
+ //       for (int i=0; i<(int)A.offsets.size(); ++i)
+ //        {
+ // 	  para_func( B, A,  AtoC, AtoB,  rA, Cblockind,  rB,  BtoC, Cis,  blockContractions_thread,  Cblocksizes_thread, i);
+ // 	}
+ // #elif ITENSOR_USE_TBB
+ //            for (int i=0; i<(int)A.offsets.size(); ++i)
+ //        {
+ //    para_func( B, A,  AtoC, AtoB, rA, Cblockind,  rB,  BtoC, Cis,  blockContractions,  Cblocksizes, i);
+ // 	}
+ //  // tbb::parallel_for( tbb::blocked_range<size_t>(0,(int)A.offsets.size()),
+ //  //    		    [&](const tbb::blocked_range<size_t>& r) {
+ //  //                      for(size_t i=r.begin(); i!=r.end(); ++i) 
+ //  // 			 para_func( B, A,  AtoC, AtoB, rA, Cblockind,  rB,  BtoC, Cis,  blockContractions,  Cblocksizes, i);
+ //  //    		    }
+ //  //    		    );
+ // #else
+ //     for (int i=0; i<(int)A.offsets.size(); ++i)
+ //        {
+ //    para_func( B, A,  AtoC, AtoB, rA, Cblockind,  rB,  BtoC, Cis,  blockContractions,  Cblocksizes, i);
+ // 	}
+ // #endif
+
+#pragma omp for schedule(dynamic)
+    for (int i=0; i<(int)A.offsets.size(); ++i)
         {
-	  para_func( B, A,  AtoC, AtoB,  rA, Cblockind,  rB,  BtoC, Cis,  blockContractions_thread,  Cblocksizes_thread, i);
-	}
- #elif ITENSOR_USE_TBB
-  tbb::parallel_for( tbb::blocked_range<size_t>(0,(int)A.offsets.size()),
-     		    [&](const tbb::blocked_range<size_t>& r) {
-                       for(size_t i=r.begin(); i!=r.end(); ++i) 
-			 para_func( B, A,  AtoC, AtoB, rA, Cblockind,  rB,  BtoC, Cis,  blockContractions,  Cblocksizes, i);
-     		    }
-     		    );
- #else
-     for (int i=0; i<(int)A.offsets.size(); ++i)
-        {
-    //para_func( B, A,  AtoC, AtoB, rA, Cblockind,  rB,  BtoC, Cis,  blockContractions,  Cblocksizes, i);
-	}
- #endif
+        auto const& aio = A.offsets[i];
 
-// #pragma omp for schedule(dynamic)
-//     for (int i=0; i<(int)A.offsets.size(); ++i)
-//         {
-//         auto const& aio = A.offsets[i];
+        //Begin computing elements of Cblock(=destination of this block-block contraction)
+        for(auto iA : range(rA))
+            if(AtoC[iA] != -1) Cblockind[AtoC[iA]] = aio.block[iA];
 
-//         //Begin computing elements of Cblock(=destination of this block-block contraction)
-//         for(auto iA : range(rA))
-//             if(AtoC[iA] != -1) Cblockind[AtoC[iA]] = aio.block[iA];
+        //Loop over blocks of B which contract with current block of A
+        for(auto const& bio : B.offsets)
+            {
+            auto do_blocks_contract = true;
+            for(auto iA : range(rA))
+                {
+                auto iB = AtoB[iA];
+                if(AtoB[iA] != -1)
+                    if(aio.block[iA] != bio.block[iB])
+                        {
+                        do_blocks_contract = false;
+                        break;
+                        }
+                }
+            if(!do_blocks_contract) continue;
 
-//         //Loop over blocks of B which contract with current block of A
-//         for(auto const& bio : B.offsets)
-//             {
-//             auto do_blocks_contract = true;
-//             for(auto iA : range(rA))
-//                 {
-//                 auto iB = AtoB[iA];
-//                 if(AtoB[iA] != -1)
-//                     if(aio.block[iA] != bio.block[iB])
-//                         {
-//                         do_blocks_contract = false;
-//                         break;
-//                         }
-//                 }
-//             if(!do_blocks_contract) continue;
+            //Finish making Cblockind
+            for(auto iB : range(rB))
+                if(BtoC[iB] != -1) Cblockind[BtoC[iB]] = bio.block[iB];
 
-//             //Finish making Cblockind
-//             for(auto iB : range(rB))
-//                 if(BtoC[iB] != -1) Cblockind[BtoC[iB]] = bio.block[iB];
+            // Store the current contraction
+#ifdef ITENSOR_USE_OMP
+            blockContractions_thread[thread_num].push_back(std::make_tuple(aio.block,bio.block,Cblockind));
+#else
+            blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
+#endif
 
-//             // Store the current contraction
-// #ifdef ITENSOR_USE_OMP
-//             blockContractions_thread[thread_num].push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-// #elif ITENSOR_USE_TBB
-// 	     blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-// #else
-//             blockContractions.push_back(std::make_tuple(aio.block,bio.block,Cblockind));
-// #endif
-
-//             long blockDim = 1;   //accumulate dim of Indices
-//             for(auto j : range(order(Cis)))
-//                 {
-//                 auto& J = Cis[j];
-//                 auto i_j = Cblockind[j];
-//                 blockDim *= J.blocksize0(i_j);
-//                 }
-// #ifdef ITENSOR_USE_OMP
-//             Cblocksizes_thread[thread_num].push_back(make_blof(Cblockind,blockDim));
-// #elif ITENSOR_USE_TBB
-// 	    Cblocksizes.push_back(make_blof(Cblockind,blockDim));
-// #else
-//             Cblocksizes.push_back(make_blof(Cblockind,blockDim));
-// #endif
-//             } //for B.offsets
-//         } //for A.offsets
+            long blockDim = 1;   //accumulate dim of Indices
+            for(auto j : range(order(Cis)))
+                {
+                auto& J = Cis[j];
+                auto i_j = Cblockind[j];
+                blockDim *= J.blocksize0(i_j);
+                }
+#ifdef ITENSOR_USE_OMP
+            Cblocksizes_thread[thread_num].push_back(make_blof(Cblockind,blockDim));
+#elif ITENSOR_USE_TBB
+	    Cblocksizes.push_back(make_blof(Cblockind,blockDim));
+#else
+            Cblocksizes.push_back(make_blof(Cblockind,blockDim));
+#endif
+            } //for B.offsets
+        } //for A.offsets
      }  // omp parallel
 
 #ifdef ITENSOR_USE_OMP
@@ -434,14 +439,14 @@ _loopContractedBlocksOMP(QDense<TA> const& A,
         }
       }
     }
-
-  template<typename T1,
-         typename T2,
-	   typename T3, typename T4,typename T5, typename T6,typename T7, typename T8,typename T9,
-         typename Callable>
-  void call_loopTBB( T1& blockContractionsSorted, T2& offset, T3& nrepeat, T4& A, T5& B, T6& C
-		     , T7& Ais, T8& Bis, T9& Cis,Callable & callback,  int i)
-  {
+  template<typename T1, typename T2, typename T3 ,typename T4 , typename T5 , typename T6 , typename T7,
+	   typename T8 , typename T9, typename Callable>
+	   void call_para_tbb(int i, T1& offset, T2& nrepeat, T3& blockContractionsSorted,
+			      T4& A, T5& B, T6& C, T7& Ais, T8& Bis, T9& Cis,Callable& callback )
+   {   
+      // Contractions that have the same output block
+      // location in C are put in the same thread to
+      // avoid race conditions
       for(auto j = offset[i]; j < offset[i]+nrepeat[i]; j++)
         {
         auto const& [Ablockind,Bblockind,Cblockind] = blockContractionsSorted[j];
@@ -453,9 +458,96 @@ _loopContractedBlocksOMP(QDense<TA> const& A,
                  bblock,Bblockind,
                  cblock,Cblockind,
                  Cblockloc);
-        }
-  }
+        
+      }
+ }
+#ifdef ITENSOR_USE_TBB
+ template<typename TA,
+         typename TB,
+         typename TC,
+         typename Callable>
+void
+_loopContractedBlocksTBB(QDense<TA> const& A,
+                         IndexSet const& Ais,
+                         QDense<TB> const& B,
+                         IndexSet const& Bis,
+                         QDense<TC> & C,
+                         IndexSet const& Cis,
+                         std::vector<std::tuple<Block,Block,Block>> const& blockContractions,
+                         Callable & callback)
+    {
+    auto sortBlockContractions = [](std::tuple<Block,Block,Block> const& t1,
+                                    std::tuple<Block,Block,Block> const& t2)
+      { 
+      return std::get<2>(t1) < std::get<2>(t2);
+      };
+    auto blockContractionsSorted = blockContractions;
+    std::sort(std::begin(blockContractionsSorted),std::end(blockContractionsSorted),
+              sortBlockContractions);
 
+    auto nnzblocksC = C.offsets.size();
+    auto offset = std::vector<int>(nnzblocksC,0);
+    auto nrepeat = std::vector<int>(nnzblocksC,1);
+
+    int nblockC = 0;
+    auto ncontractions = blockContractionsSorted.size();
+
+    for(decltype(ncontractions) i = 1; i < ncontractions; i++)
+        {
+        if(std::get<2>(blockContractionsSorted[i]) == 
+           std::get<2>(blockContractionsSorted[i-1]))
+            {
+            nrepeat[nblockC] += 1;
+            }
+        else
+            {
+            nblockC += 1;
+            offset[nblockC] = i;
+            }
+        }
+
+      
+#ifdef DEBUG
+    decltype(ncontractions) n = 0;
+    for(decltype(nnzblocksC) i = 0; i < nnzblocksC; i++)
+      {
+      decltype(ncontractions) last_offset_i = offset[i]+nrepeat[i];
+      for(decltype(ncontractions) j = offset[i]; j < last_offset_i; j++)
+        {
+        if(j != n) Error("Wrong contraction plan in QDense contraction");
+        n++;
+        }
+      }
+    if(ncontractions != n) Error("Wrong number of contractions in QDense contraction");
+#endif
+
+    // #pragma omp parallel for schedule(dynamic)
+    // for(decltype(nnzblocksC) i = 0; i < nnzblocksC; i++)
+    //   {
+	  tbb::parallel_for( tbb::blocked_range<size_t>(0,nnzblocksC),
+     		    [&](const tbb::blocked_range<size_t>& r) {
+                       for(size_t i=r.begin(); i!=r.end(); ++i) 
+  			 call_para_tbb( i,  offset,  nrepeat,  blockContractionsSorted, A,  B,  C,  Ais,  Bis,  Cis, callback );
+     		    }
+     		    );
+      // Contractions that have the same output block
+      // location in C are put in the same thread to
+      // avoid race conditions
+      // for(auto j = offset[i]; j < offset[i]+nrepeat[i]; j++)
+      //   {
+      //   auto const& [Ablockind,Bblockind,Cblockind] = blockContractionsSorted[j];
+      //   auto ablock = getBlock(A,Ais,Ablockind);
+      //   auto bblock = getBlock(B,Bis,Bblockind);
+      //   auto cblock = getBlock(C,Cis,Cblockind);
+      //   auto Cblockloc = getBlockLoc(C,Cblockind);
+      //   callback(ablock,Ablockind,
+      //            bblock,Bblockind,
+      //            cblock,Cblockind,
+      //            Cblockloc);
+      //   }
+      // }
+    }
+  #endif
 template<typename TA,
          typename TB,
          typename TC,
@@ -473,7 +565,9 @@ loopContractedBlocks(QDense<TA> const& A,
 #ifdef ITENSOR_USE_OMP
     _loopContractedBlocksOMP(A,Ais,B,Bis,C,Cis,blockContractions,callback);
 #elif ITENSOR_USE_TBB
-    _loopContractedBlocks(A,Ais,B,Bis,C,Cis,blockContractions,callback);
+     _loopContractedBlocksTBB(A,Ais,B,Bis,C,Cis,blockContractions,callback);
+    //_loopContractedBlocksTBB(A,Ais,B,Bis,C,Cis,blockContractions,callback);
+    // _loopContractedBlocks(A,Ais,B,Bis,C,Cis,blockContractions,callback);
 #else
     _loopContractedBlocks(A,Ais,B,Bis,C,Cis,blockContractions,callback);
 #endif
@@ -496,6 +590,7 @@ loopContractedBlocks(TA const& A,
                      IndexSet const& Cis,
                      Callable & callback)
     {
+      //                   std::cout<< "wier call "<< std::endl;
     auto rA = Ais.order();
     auto rB = Bis.order();
     auto rC = Cis.order();

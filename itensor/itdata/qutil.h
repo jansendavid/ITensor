@@ -439,10 +439,9 @@ _loopContractedBlocksOMP(QDense<TA> const& A,
         }
       }
     }
-  template<typename T1, typename T2, typename T3 ,typename T4 , typename T5 , typename T6 , typename T7,
-	   typename T8 , typename T9, typename Callable>
-	   void call_para_tbb(int i, T1& offset, T2& nrepeat, T3& blockContractionsSorted,
-			      T4& A, T5& B, T6& C, T7& Ais, T8& Bis, T9& Cis,Callable& callback )
+  template<typename TA, typename TB, typename TC, typename Callable>
+    void call_para_tbb(int i, std::vector<int>& offset, std::vector<int>& nrepeat, std::vector<std::tuple<Block,Block,Block>>&  blockContractionsSorted,
+			      QDense<TA> const& A, QDense<TB> const& B, QDense<TC>& C, IndexSet const& Ais, IndexSet const& Bis, IndexSet const& Cis,Callable& callback )
    {   
       // Contractions that have the same output block
       // location in C are put in the same thread to
@@ -521,31 +520,13 @@ _loopContractedBlocksTBB(QDense<TA> const& A,
     if(ncontractions != n) Error("Wrong number of contractions in QDense contraction");
 #endif
 
-    // #pragma omp parallel for schedule(dynamic)
-    // for(decltype(nnzblocksC) i = 0; i < nnzblocksC; i++)
-    //   {
+
 	  tbb::parallel_for( tbb::blocked_range<size_t>(0,nnzblocksC),
      		    [&](const tbb::blocked_range<size_t>& r) {
                        for(size_t i=r.begin(); i!=r.end(); ++i) 
   			 call_para_tbb( i,  offset,  nrepeat,  blockContractionsSorted, A,  B,  C,  Ais,  Bis,  Cis, callback );
      		    }
      		    );
-      // Contractions that have the same output block
-      // location in C are put in the same thread to
-      // avoid race conditions
-      // for(auto j = offset[i]; j < offset[i]+nrepeat[i]; j++)
-      //   {
-      //   auto const& [Ablockind,Bblockind,Cblockind] = blockContractionsSorted[j];
-      //   auto ablock = getBlock(A,Ais,Ablockind);
-      //   auto bblock = getBlock(B,Bis,Bblockind);
-      //   auto cblock = getBlock(C,Cis,Cblockind);
-      //   auto Cblockloc = getBlockLoc(C,Cblockind);
-      //   callback(ablock,Ablockind,
-      //            bblock,Bblockind,
-      //            cblock,Cblockind,
-      //            Cblockloc);
-      //   }
-      // }
     }
   #endif
 template<typename TA,

@@ -71,7 +71,7 @@ class BosonSite
             }
         else
             {
-            if(conserveNb) Error("ConserveNb cannot be true when ConserveQNs=false");
+            if(conserveNb) throw ITError("ConserveNb cannot be true when ConserveQNs=false");
             s = Index(1+maxOcc,tags);
             }
         }
@@ -88,7 +88,7 @@ class BosonSite
             if(state == str(n)) return s(1+n);
             }
 	if(state == "Emp")return s(1);
-        Error("State " + state + " not recognized");
+        throw ITError("State " + state + " not recognized");
         return IndexVal{};
         }
 
@@ -126,7 +126,7 @@ class BosonSite
             }
         else
             {
-            Error("Operator \"" + opname + "\" name not recognized");
+            throw ITError("Operator \"" + opname + "\" name not recognized");
             }
 
         return Op;

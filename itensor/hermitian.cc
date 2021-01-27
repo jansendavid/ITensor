@@ -330,7 +330,7 @@ diagHImpl(ITensor H,
                 while(ndegen > 0 && 
                       this_m < d.size() && 
                       total_m < m && 
-                      d(this_m) > docut_lower)
+                      std::abs(d(this_m)) > docut_lower)
                     {
                     ++this_m;
                     ++total_m;
